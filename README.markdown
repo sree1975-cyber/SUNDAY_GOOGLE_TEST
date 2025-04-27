@@ -70,8 +70,8 @@ A Streamlit app to save, organize, and manage web links with persistent storage 
    ```
 
 ## Usage
-- **Owner Mode**: Log in with password `admin123` to manage a shared `web_links.xlsx` file.
-- **Guest Mode**: Log in with password `guest456` and a username to manage a personal `guest_<username>.xlsx` file.
+- **Owner Mode**: Log in with password `xxx` to manage a shared `web_links.xlsx` file.
+- **Guest Mode**: Log in with password `xxx` and a username to manage a personal `guest_<username>.xlsx` file.
 - **Public Mode**: Access without logging in; links are stored temporarily in session state and can be downloaded.
 - Add links, fetch metadata, search, delete, and export links using the navigation menu.
 
