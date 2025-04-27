@@ -1,5 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
+import pandas as pd  # Added missing import
 from utils.data_manager import init_data, save_data
 from utils.ui_components import display_header, login_form, add_link_section, browse_section, download_section
 from utils.link_operations import save_link, delete_selected_links, fetch_metadata
