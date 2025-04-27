@@ -1,163 +1,8 @@
 import pandas as pd
-import os
 import logging
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
-from io import BytesIO
-import streamlit as st
-import json
-
-def init_data(mode, username=None):
-    """
-    Initialize or load Excel file from Google Drive based on mode.
-    
-    Args:
-        mode (str): 'owner', 'guest', or 'public'
-        username (str, optional): Username for guest mode
-    
-    Returns:
-        tuple: (DataFrame, excel_file_name or None)
-    """
-    if mode == "owner":
-        excel_file = 'web_links.xlsx'
-    elif mode == "guest":
-        if not username:
-            raise ValueError("Username required for guest mode")
-        excel_file = f'guest_{username}.xlsx'
-    else:
-        return pd.DataFrame(), None  # Public mode uses session state
-    
-    try:
-        # Check if file exists in Google Drive
-        service = get_drive_service()
-        file_id = find_file_in_drive(service, excel_file)
-        
-        if file_id:
-            # Download and load file
-            df = download_file_from_drive(service, file_id)
-            if 'tags' in df.columns:
-                df['tags'] = df['tags'].apply(lambda x: x.split(',') if isinstance(x, str) else []  else x)
-            for col in ['title', 'url', 'description']:
-                if col in df.columns:
-                    df[col] = df[col].astype(str).replace('nan', '')
-            logging.info(f"Loaded {excel_file} from Google Drive")
-        else:
-            # Create new DataFrame
-            df = pd.DataFrame(columns=[
-                'id', 'url', 'title', 'description', 'tags', 
-                'created_at', 'updated_at'
-            ])
-            logging.info(f"Created new {excel_file}")
-        return df, excel_file
-    except Exception as e:
-        st.error(f"Failed to initialize {excel_file}: {str(e)}")
-        logging.error(f"Data initialization failed: {str(e)}")
-        return pd.DataFrame(), excel_file
-
-def save_data(df, excel_file):
-    """
-    Save DataFrame to Google Drive.
-    
-    Args:
-        df (DataFrame): DataFrame to save
-        excel_file (str): Name of the Excel file
-    
-    Returns:
-        bool: True if save successful, False otherwise
-    """
-    try:
-        logging.debug(f"Saving DataFrame to {excel_file}: {df.to_dict()}")
-        df_to_save = df.copy()
-        if 'tags' in df_to_save.columns:
-            df_to_save['tags'] = df_to_save['tags'].apply(lambda x: ','.join(map(str, x)) if isinstance(x, list) else '')
-        
-        # Save to BytesIO
-        output = BytesIO()
-        df_to_save.to_excel(output, index=False, engine='openpyxl')
-        output.seek(0)
-        
-        # Upload to Google Drive
-        service = get_drive_service()
-        file_id = find_file_in_drive(service, excel_file)
-        
-        folder_id = st.secrets["GOOGLE_DRIVE_FOLDER_ID"]
-        
-        if file_id:
-            # Update existing file
-            media = MediaIoBaseUpload(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            service.files().update(
-                fileId=file_id,
-                media_body=media
-            ).execute()
-            logging.info(f"Updated {excel_file} in Google Drive")
-        else:
-            # Create new file
-            file_metadata = {
-                'name': excel_file,
-                'parents': [folder_id],
-                'mimeType': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            }
-            media = MediaIoBaseUpload(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            service.files().create(
-                body=file_metadata,
-                media_body=media
-            ).execute()
-            logging.info(f"Created {excel_file} in Google Drive")
-        
-        return True
-    except Exception as e:
-        st.error(f"Error saving data to Google Drive: {str(e)}")
-        logging.error(f"Data save failed: {str(e)}")
-        return False
-
-def get_drive_service():
-    """Create Google Drive API service using service account credentials."""
-    try:
-        from google.oauth2 import service_account
-        credentials = service_account.Credentials.from_service_account_info(
-            json.loads(st.secrets["GOOGLE_DRIVE_CREDENTIALS"]),
-            scopes=['https://www.googleapis.com/auth/drive']
-        )
-        return build('drive', 'v3', credentials=credentials)
-    except Exception as e:
-        st.error(f"Failed to initialize Google Drive service: {str(e)}")
-        logging.error(f"Drive service initialization failed: {str(e)}")
-        raise
-
-def find_file_in_drive(service, file_name):
-    """
-    Find file in Google Drive by name.
-    
-    Args:
-        service: Google Drive API service
-        file_name (str): Name of the file to find
-    
-    Returns:
-        str: File ID if found, None otherwise
-    """
-    try:
-        folder_id = st.secrets["GOOGLE_DRIVE_FOLDER_ID"]
-        query = f"name='{file_name}' and '{folder_id}' in parents and trashed=false"
-        results = service.files().list(
-            q=query,
-            spaces='drive',
-            fields='files(id)'
-        ).execute()
-        files–
-
-System: You are Grok 3 built by xAI.
-
-The response was cut off due to length constraints. Below is the continuation and completion of the artifacts, ensuring all requested functionality is included, maintaining the existing features (animated balloons, confirmation messages), and adhering to the modular structure with Google Drive integration.
-
-### Continuation of Artifacts
-
-#### utils/data_manager.py (Continued)
-<xaiArtifact artifact_id="0bc3f68d-d625-4d1c-ba3c-a0507dec6cb5" artifact_version_id="f0d741ac-909b-42ef-aa6d-182f65726adf" title="utils/data_manager.py" contentType="text/python">
-import pandas as pd
-import os
-import logging
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseUpload
+from googleapiclient.http import MediaIoBaseDownload
 from io import BytesIO
 import streamlit as st
 import json
@@ -266,7 +111,12 @@ def save_data(df, excel_file):
         return False
 
 def get_drive_service():
-    """Create Google Drive API service using service account credentials."""
+    """
+    Create Google Drive API service using service account credentials.
+    
+    Returns:
+        Google Drive API service object
+    """
     try:
         from google.oauth2 import service_account
         credentials = service_account.Credentials.from_service_account_info(
